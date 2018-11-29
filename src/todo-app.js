@@ -3,7 +3,8 @@
 class TodoApp extends React.Component {
     constructor(props) {
         super(props);
-        this.state = { items: [], text: '' };
+        var temp = window.data.slice();
+        this.state = {items: temp, text: ''};
         this.handleChange = this.handleChange.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
     }
@@ -17,13 +18,16 @@ class TodoApp extends React.Component {
                 null,
                 "TODO"
             ),
-            React.createElement(TodoList, { items: this.state.items }),
+            React.createElement(TodoList, {
+                items: this.state.items,
+                deleteItem: this.handleDelete.bind(this)
+            }),
             React.createElement(
                 "form",
-                { onSubmit: this.handleSubmit },
+                {onSubmit: this.handleSubmit},
                 React.createElement(
                     "label",
-                    { htmlFor: "new-todo" },
+                    {htmlFor: "new-todo"},
                     "What needs to be done?"
                 ),
                 React.createElement("input", {
@@ -42,7 +46,7 @@ class TodoApp extends React.Component {
     }
 
     handleChange(e) {
-        this.setState({ text: e.target.value });
+        this.setState({text: e.target.value});
     }
 
     handleSubmit(e) {
@@ -50,13 +54,50 @@ class TodoApp extends React.Component {
         if (!this.state.text.length) {
             return;
         }
+        $.ajax({
+            type: 'POST',
+            url: 'http://192.168.3.107:8080/item',
+            crossDomain: true,
+            dataType: 'json',
+            data: {
+                title: this.state.text,
+                done: 0,
+                user: "GayLord"
+            },
+
+            error: function (data) {
+                console.log(data);
+            },
+        }).done((data) => {
+            this.setState(state => ({
+                items: data,
+                text: ''
+            }));
+        });
+
         const newItem = {
-            text: this.state.text,
-            id: Date.now()
+            title: this.state.text,
+            done: 0,
+            user: "GayLord"
         };
-        this.setState(state => ({
-            items: state.items.concat(newItem),
-            text: ''
-        }));
+
+
+    }
+
+    handleDelete(item) {
+        $.ajax({
+            type: 'DELETE',
+            url: 'http://192.168.3.107:8080/item/' + item.id,
+            crossDomain: true,
+            dataType: 'json',
+            error: function (data) {
+                console.log(data);
+            },
+        }).done((data) => {
+            this.setState(state => ({
+                items: data,
+                text: ''
+            }));
+        });
     }
 }
